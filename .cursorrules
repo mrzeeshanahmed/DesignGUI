@@ -12,3 +12,4 @@ When the user types a slash command, you MUST read the corresponding instruction
 1. Only output Python code using `import nice_design.ui_lib as ui`.
 2. Do not use React, HTML, or standard NiceGUI elements like `ui.button`, `ui.input`, `ui.label`, etc.
 3. Save generated UI views in `product/views/`.
+\n\n# DesignGUI Agent Rules\nYou are operating in a DesignGUI project. You MUST read the DESIGNGUI_INSTRUCTIONS.md file in the root directory before answering prompts or generating code.\n

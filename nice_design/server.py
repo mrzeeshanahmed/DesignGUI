@@ -95,9 +95,9 @@ def preview_environment():
         # Initial population
         update_file_list()
 
-def run_server():
+def run_server(port: int = 8080):
     @ui.page('/')
     def index():
         preview_environment()
         
-    ui.run(title='Nice Design OS - Live Preview', port=8080, reload=False)
+    ui.run(title='Nice Design OS - Live Preview', port=port, reload=False)

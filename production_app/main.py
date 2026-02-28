@@ -1,18 +1,12 @@
 from nicegui import ui
 
-# Import your shell and views dynamically built by the AI
+# Dynamically import the AI generated view.
 from product.views.dashboard import render_view
-
-# Example: If you had a shell layout
-# from product.shell import AppLayout 
-# @ui.page('/')
-# def index():
-#     with AppLayout():
-#         render_view()
 
 @ui.page('/')
 def index():
     render_view()
 
 if __name__ in {"__main__", "__mp_main__"}:
-    ui.run(title='Production App', port=8000)
+    # Reload and show are FALSE for production edge/headless optimization
+    ui.run(title='Production App', host='127.0.0.1', port=9000, reload=False, show=False)

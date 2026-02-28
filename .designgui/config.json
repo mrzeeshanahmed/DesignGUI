@@ -1,0 +1,10 @@
+{
+  "designgui_version": "1.0.0",
+  "environment": "Autonomous Agent",
+  "daemon_port": 8080,
+  "paths": {
+    "instructions": "DESIGNGUI_INSTRUCTIONS.md",
+    "views": "product/views",
+    "models": "product/models.py"
+  }
+}

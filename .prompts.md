@@ -1,0 +1,1 @@
+\n\n# DesignGUI Agent Rules\nYou are operating in a DesignGUI project. You MUST read the DESIGNGUI_INSTRUCTIONS.md file in the root directory before answering prompts or generating code.\n
