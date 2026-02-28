@@ -1,4 +1,4 @@
-# Component API Cheat Sheet
+# Component API Cheat Sheet (/shape-section)
 
 Use these exact components from `nice_design.ui_lib.primitives` and `nice_design.ui_lib.inputs`.
 
@@ -11,5 +11,6 @@ Use these exact components from `nice_design.ui_lib.primitives` and `nice_design
 - `Input(placeholder: str = '', value: str = '', on_change: Callable = None, base_classes: list[str] = None)`: A text input field. Use `.bind_value_to(obj, 'prop_name')` to bind.
 - `Divider(base_classes: list[str] = None)`: A horizontal line.
 
-## Tailwind Classes
-Inject standard Tailwind classes using the `base_classes` parameter, e.g. `Button('Save', base_classes=['mt-4', 'w-full'])`.
+1. Read `product/models.py` to understand the data.
+2. Generate mock data arrays.
+3. Scaffold a base feature screen in `product/views/{name}.py`.
