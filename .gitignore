@@ -167,3 +167,7 @@ screenshot.png
 screenshot2.png
 product/
 .nice-design/
+build/
+dist/
+*.egg-info/
+__pycache__/
