@@ -1,6 +1,6 @@
 from nicegui import ui
-from nice_design.ui_lib.primitives import Box, Flex, Stack, Container, Text, Divider
-from nice_design.ui_lib.inputs import Button, Input
+from designgui.ui_lib.primitives import Box, Flex, Stack, Container, Text, Divider
+from designgui.ui_lib.inputs import Button, Input
 
 # Note: We still import `ui` to call ui.run(), but we DO NOT use ui.label, ui.button, etc.
 # unless it's strictly for page setup/app structure.

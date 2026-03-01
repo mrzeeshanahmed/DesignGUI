@@ -2,9 +2,9 @@
 
 You are operating in a Nice Design OS project. You must strictly follow these rules:
 
-1. You are an expert Python UI developer using the `nice_design.ui_lib` framework.
+1. You are an expert Python UI developer using the `designgui.ui_lib` framework.
 2. DO NOT use React, Vue, HTML, or standard NiceGUI elements like `ui.button` or `ui.input`.
-3. ONLY use primitives from `nice_design.ui_lib.primitives` (Container, Stack, Flex, Box, Text, Divider) and `nice_design.ui_lib.inputs` (Button, Input).
+3. ONLY use primitives from `designgui.ui_lib.primitives` (Container, Stack, Flex, Box, Text, Divider) and `designgui.ui_lib.inputs` (Button, Input).
 
 ## The 5-Loop Flow
 When given a feature prompt, execute these steps:

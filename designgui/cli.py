@@ -98,9 +98,9 @@ def init():
 
 You are operating in a Nice Design OS project. You must strictly follow these rules:
 
-1. You are an expert Python UI developer using the `nice_design.ui_lib` framework.
+1. You are an expert Python UI developer using the `designgui.ui_lib` framework.
 2. DO NOT use React, Vue, HTML, or standard NiceGUI elements like `ui.button` or `ui.input`.
-3. ONLY use primitives from `nice_design.ui_lib.primitives` (Container, Stack, Flex, Box, Text, Divider) and `nice_design.ui_lib.inputs` (Button, Input).
+3. ONLY use primitives from `designgui.ui_lib.primitives` (Container, Stack, Flex, Box, Text, Divider) and `designgui.ui_lib.inputs` (Button, Input).
 
 ## The 5-Loop Flow
 When given a feature prompt, execute these steps:
@@ -124,7 +124,7 @@ You are outlining the app concept and data structures in `product/specs/vision.m
     shell_md = """# Design Shell (/design-shell)
 You are building the layout in `product/shell.py` using `Container, Stack, Flex, Box`."""
     section_md = """# Component API Cheat Sheet (/shape-section)
-Use ONLY components from `nice_design.ui_lib`. Scaffold a base feature screen in `product/views/_.py`."""
+Use ONLY components from `designgui.ui_lib`. Scaffold a base feature screen in `product/views/_.py`."""
     screen_md = """# Design Screen Refinement (/design-screen)
 You are refining a view. Wire up Python callbacks (`on_click=lambda:...`) and manage state."""
     
@@ -134,8 +134,8 @@ You are refining a view. Wire up Python callbacks (`on_click=lambda:...`) and ma
     (commands_dir / "screen.md").write_text(screen_md)
     
     # Create placeholder
-    placeholder_view_content = """from nice_design.ui_lib.primitives import Stack, Text
-from nice_design.ui_lib.inputs import Button
+    placeholder_view_content = """from designgui.ui_lib.primitives import Stack, Text
+from designgui.ui_lib.inputs import Button
 
 def render_view():
     with Stack(base_classes=['p-8', 'bg-white', 'rounded-xl', 'shadow-md', 'items-center']):
@@ -146,7 +146,7 @@ def render_view():
     (views_dir / "dashboard.py").write_text(placeholder_view_content)
     
     typer.echo(typer.style("Nice Design OS project initialized successfully!", fg=typer.colors.GREEN))
-    typer.echo(f"Run `nice-design start` or `nice-design daemon` to launch on port {daemon_port}.")
+    typer.echo(f"Run `designgui start` or `designgui daemon` to launch on port {daemon_port}.")
 
 @app.command()
 def export(host: str = typer.Option("0.0.0.0", help="Host address for production app"), 
@@ -199,7 +199,7 @@ def start():
     if str(Path.cwd()) not in sys.path:
         sys.path.insert(0, str(Path.cwd()))
         
-    from nice_design.server import run_server
+    from designgui.server import run_server
     run_server(port=port)
 
 @app.command()
@@ -214,7 +214,7 @@ def daemon(port: int = typer.Option(None, help="Port to run the daemon on (overr
     if str(Path.cwd()) not in sys.path:
         sys.path.insert(0, str(Path.cwd()))
         
-    from nice_design.server import run_server
+    from designgui.server import run_server
     run_server(port=target_port)
 
 if __name__ == "__main__":
