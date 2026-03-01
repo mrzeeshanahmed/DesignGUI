@@ -1,6 +1,9 @@
 import os
 import json
 import typer
+import sys
+import shutil
+import importlib.util
 from pathlib import Path
 
 # Provide a global app description for the Typer help menu
@@ -12,6 +15,19 @@ app = typer.Typer(
         "can autonomously build your UI screens using the 'Prompt as Code' 5-Loop workflow."
     )
 )
+
+def version_callback(value: bool):
+    if value:
+        config = get_config()
+        version = config.get("designgui_version", "unknown")
+        typer.echo(f"DesignGUI Version: {version}")
+        raise typer.Exit()
+
+@app.callback()
+def main(
+    version: bool = typer.Option(None, "--version", "-v", callback=version_callback, is_eager=True, help="Show the application's version and exit.")
+):
+    pass
 
 def smart_append_instruction(filepath: Path, instruction_text: str):
     """Safely append instruction pointers to IDE rule files without destroying existing rules."""
@@ -52,19 +68,42 @@ def smart_remove_instruction(filepath: Path):
         else:
             filepath.write_text(content)
 
+def get_locale_strings():
+    """Load CLI localized strings."""
+    locale_file = Path(__file__).parent / "locale" / "en.json"
+    if locale_file.exists():
+        try:
+            return json.loads(locale_file.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    # Basic fallbacks if loading fails
+    return {
+        "cli_init_start": "Initializing Nice Design OS project...",
+        "cli_init_success": "Nice Design OS project initialized successfully!",
+        "cli_env_prompt": "Which primary AI environment are you using?",
+        "cli_port_prompt": "What port should the live preview daemon run on?",
+        "cli_export_error": "Error: {dir} directory not found. Have you initialized?",
+        "cli_export_start": "Exporting product to production_app/ ...",
+        "cli_export_success": "Export complete!",
+        "cli_start_engine": "Starting Live Preview Engine on port {port}...",
+        "cli_daemon_init": "Initializing Autonomous Daemon on port {port}...",
+        "cli_remove_start": "Removing DesignGUI from the project...",
+        "cli_remove_success": "DesignGUI has been safely removed from this project."
+    }
+
 def smart_gitignore_append(cwd: Path):
     gitignore = cwd / ".gitignore"
     if gitignore.exists():
-        content = gitignore.read_text()
+        content = gitignore.read_text(encoding="utf-8")
         if ".designgui/" not in content and ".designgui" not in content:
-            with open(gitignore, "a") as f:
+            with open(gitignore, "a", encoding="utf-8") as f:
                 f.write("\n.designgui/\n")
     else:
-        with open(gitignore, "w") as f:
+        with open(gitignore, "w", encoding="utf-8") as f:
             f.write(".designgui/\n")
 
 def get_config():
-    """Attempt to load the .designgui/config.json with gracefull fallbacks."""
+    """Attempt to load the .designgui/config.json with graceful fallbacks."""
     config_path = Path(".designgui/config.json")
     if config_path.exists():
         try:
@@ -78,19 +117,20 @@ def get_config():
         "daemon_port": 8080,
         "paths": {
             "instructions": "DESIGNGUI_INSTRUCTIONS.md",
-            "views": "product/views",
-            "models": "product/models.py"
+            "views": ".designgui/product/views",
+            "models": ".designgui/product/models.py"
         }
     }
 
 @app.command()
-def init():
+def init() -> None:
     """Initialize a new Nice Design OS project with guided setup and inject AI Agent rules."""
     cwd = Path.cwd()
-    typer.echo(typer.style("Initializing Nice Design OS project...", fg=typer.colors.CYAN))
+    strings = get_locale_strings()
+    typer.echo(typer.style(strings["cli_init_start"], fg=typer.colors.CYAN))
     
     # --- Interactive Guided Setup ---
-    env_choices = """Which primary AI environment are you using?
+    env_choices = f"""{strings["cli_env_prompt"]}
 [1] Cursor
 [2] Windsurf
 [3] Copilot/JetBrains
@@ -102,7 +142,7 @@ Enter your choice:"""
     env_map = {"1": "Cursor", "2": "Windsurf", "3": "Copilot/JetBrains", "4": "Generic/Cloud IDE", "5": "Autonomous Agent"}
     environment = env_map.get(environment_input, "Unknown")
     
-    port_input = typer.prompt("What port should the live preview daemon run on?", default="8080")
+    port_input = typer.prompt(strings["cli_port_prompt"], default="8080")
     try:
         daemon_port = int(port_input)
     except ValueError:
@@ -112,10 +152,12 @@ Enter your choice:"""
         "designgui_version": "1.0.0",
         "environment": environment,
         "daemon_port": daemon_port,
+        "locale": "en-US",
+        "font_family": "Inter, sans-serif",
         "paths": {
             "instructions": "DESIGNGUI_INSTRUCTIONS.md",
-            "views": "product/views",
-            "models": "product/models.py"
+            "views": ".designgui/product/views",
+            "models": ".designgui/product/models.py"
         }
     }
     
@@ -196,40 +238,56 @@ def render_view():
 """
     (views_dir / "dashboard.py").write_text(placeholder_view_content)
     
-    typer.echo(typer.style("Nice Design OS project initialized successfully!", fg=typer.colors.GREEN))
+    typer.echo(typer.style(strings["cli_init_success"], fg=typer.colors.GREEN))
     typer.echo(f"Run `designgui start` or `designgui daemon` to launch on port {daemon_port}.")
 
 @app.command()
 def export(host: str = typer.Option("0.0.0.0", help="Host address for production app"), 
-           port: int = typer.Option(8080, help="Port for production app")):
+           port: int = typer.Option(8080, help="Port for production app")) -> None:
     """Export the prototype to a production-ready standalone application optimized for edge deployment (e.g. Raspberry Pi)."""
-    import shutil
-    
     cwd = Path.cwd()
     config = get_config()
     views_path = config["paths"]["views"]
     
-    product_dir = cwd / Path(views_path).parent
+    views_dir = cwd / Path(views_path)
+    product_dir = views_dir.parent
     prod_app_dir = cwd / "production_app"
     
+    strings = get_locale_strings()
+    
     if not product_dir.exists():
-        typer.echo(typer.style(f"Error: {product_dir.name} directory not found. Have you initialized?", fg=typer.colors.RED))
+        err_msg = strings["cli_export_error"].format(dir=product_dir.name)
+        typer.echo(typer.style(err_msg, fg=typer.colors.RED))
         raise typer.Exit(1)
         
-    typer.echo(f"Exporting product to production_app/ ...")
+    typer.echo(strings["cli_export_start"])
     
     if prod_app_dir.exists():
         shutil.rmtree(prod_app_dir)
     shutil.copytree(product_dir, prod_app_dir / "product")
     
+    # Dynamically build router for all views
+    imports = []
+    routes = []
+    
+    py_files = [f.stem for f in views_dir.glob("*.py") if f.name != "__init__.py"]
+    for view_name in py_files:
+        imports.append(f"from product.views.{view_name} import render_view as render_{view_name}")
+        route_path = '/' if view_name == 'dashboard' or len(py_files) == 1 and view_name == py_files[0] else f'/{view_name}'
+        routes.append(f"""
+@ui.page('{route_path}')
+def route_{view_name}():
+    render_{view_name}()
+""")
+        
+    imports_block = "\\n".join(imports)
+    routes_block = "".join(routes)
+
     main_py_content = f"""from nicegui import ui
 
-# Dynamically import the AI generated view.
-from product.views.dashboard import render_view
-
-@ui.page('/')
-def index():
-    render_view()
+# Dynamically imported views
+{imports_block}
+{routes_block}
 
 if __name__ in {{"__main__", "__mp_main__"}}:
     # Reload and show are FALSE for production edge/headless optimization
@@ -237,17 +295,22 @@ if __name__ in {{"__main__", "__mp_main__"}}:
 """
     (prod_app_dir / "main.py").write_text(main_py_content)
     
-    typer.echo(typer.style("Export complete!", fg=typer.colors.GREEN))
+    typer.echo(typer.style(strings["cli_export_success"], fg=typer.colors.GREEN))
     typer.echo(f"Run `cd production_app` and `python main.py` to start the headless server on {host}:{port}.")
 
 @app.command()
-def start():
+def start() -> None:
     """Start the Live Preview Engine in the foreground equipped with hot-reloading file selection."""
+    typer.echo(typer.style("\n⚠️  WARNING: DESIGNGUI EXECUTES PYTHON PAYLOADS DYNAMICALLY ⚠️", fg=typer.colors.RED, bold=True))
+    typer.echo(typer.style("The Live Preview engine will automatically execute code dropped into the `.designgui/product/views/` directory. Do not place untrusted third-party scripts here.\n", fg=typer.colors.YELLOW))
+    
     config = get_config()
+    strings = get_locale_strings()
     port = config.get("daemon_port", 8080)
-    views_path = config.get("paths", {}).get("views", "product/views")
-    typer.echo(f"Starting Live Preview Engine on port {port}...")
-    import sys
+    views_path = config.get("paths", {}).get("views", ".designgui/product/views")
+    msg = strings["cli_start_engine"].format(port=port)
+    typer.echo(msg)
+    
     if str(Path.cwd()) not in sys.path:
         sys.path.insert(0, str(Path.cwd()))
         
@@ -255,15 +318,19 @@ def start():
     run_server(port=port, views_path=views_path)
 
 @app.command()
-def daemon(port: int = typer.Option(None, help="Port to run the daemon on (overrides config.json)")):
+def daemon(port: int = typer.Option(None, help="Port to run the daemon on (overrides config.json)")) -> None:
     """Run the live-preview engine as a background watcher for autonomous agents."""
+    typer.echo(typer.style("\n⚠️  WARNING: DESIGNGUI EXECUTES PYTHON PAYLOADS DYNAMICALLY ⚠️", fg=typer.colors.RED, bold=True))
+    typer.echo(typer.style("The Daemon engine will automatically execute code dropped into the `.designgui/product/views/` directory. Do not place untrusted third-party scripts here.\n", fg=typer.colors.YELLOW))
+    
     config = get_config()
+    strings = get_locale_strings()
     target_port = port if port else config.get("daemon_port", 8080)
-    views_path = config.get("paths", {}).get("views", "product/views")
-    typer.echo(f"Initializing Autonomous Daemon on port {target_port}...")
+    views_path = config.get("paths", {}).get("views", ".designgui/product/views")
+    msg = strings["cli_daemon_init"].format(port=target_port)
+    typer.echo(msg)
     typer.echo(f"Agents can write .py files to {views_path}/ to dynamically generate interactive dashboards.")
     
-    import sys
     if str(Path.cwd()) not in sys.path:
         sys.path.insert(0, str(Path.cwd()))
         
@@ -271,11 +338,11 @@ def daemon(port: int = typer.Option(None, help="Port to run the daemon on (overr
     run_server(port=target_port, views_path=views_path)
 
 @app.command("remove")
-def remove():
+def remove() -> None:
     """Safely removes DesignGUI from the project."""
-    import shutil
     cwd = Path.cwd()
-    typer.echo("Removing DesignGUI from the project...")
+    strings = get_locale_strings()
+    typer.echo(strings["cli_remove_start"])
     
     rule_files = [".cursorrules", ".windsurfrules", ".clinerules", ".github/copilot-instructions.md", ".prompts.md"]
     for rf in rule_files:
@@ -289,7 +356,7 @@ def remove():
     if legacy_instructions.exists():
         legacy_instructions.unlink()
         
-    typer.echo(typer.style("DesignGUI has been safely removed from this project.", fg=typer.colors.GREEN))
+    typer.echo(typer.style(strings["cli_remove_success"], fg=typer.colors.GREEN))
 
 if __name__ == "__main__":
     app()

@@ -17,12 +17,15 @@ class TailwindElement(Element):
         if selected in variant_dict:
             self.classes(variant_dict[selected])
 
-    def bind_value(self, target_object, target_name: str):
+    def bind_attribute(self, attr_name: str, target_object, target_name: str):
         """
-        Binds an HTML attribute (like value) to a target object property.
-        Since we aren't using Quasar v-model, we must manage simple binding ourselves if needed.
+        Binds an HTML attribute to a target object property safely.
         """
-        # NiceGUI Element has bind_visibility, bind_text etc.
-        # But we can leverage property bindings for attributes.
-        self.bind_prop('value', target_object, target_name)
+        setattr(target_object, target_name, self._props.get(attr_name, ''))
+        def _update():
+            self._props[attr_name] = getattr(target_object, target_name)
+            self.update()
+        # You would typically register the watcher depending on the framework here
+        # For simple manual pulls:
+        _update()
         return self

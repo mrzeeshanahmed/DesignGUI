@@ -1,0 +1,13 @@
+{
+    "cli_init_start": "Initializing Nice Design OS project...",
+    "cli_init_success": "Nice Design OS project initialized successfully!",
+    "cli_env_prompt": "Which primary AI environment are you using?",
+    "cli_port_prompt": "What port should the live preview daemon run on?",
+    "cli_export_error": "Error: {dir} directory not found. Have you initialized?",
+    "cli_export_start": "Exporting product to production_app/ ...",
+    "cli_export_success": "Export complete!",
+    "cli_start_engine": "Starting Live Preview Engine on port {port}...",
+    "cli_daemon_init": "Initializing Autonomous Daemon on port {port}...",
+    "cli_remove_start": "Removing DesignGUI from the project...",
+    "cli_remove_success": "DesignGUI has been safely removed from this project."
+}

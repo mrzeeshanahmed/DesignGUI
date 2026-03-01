@@ -1,3 +1,4 @@
+import html
 from .base import TailwindElement
 
 class Box(TailwindElement):
@@ -27,9 +28,9 @@ class Container(TailwindElement):
 
 class Text(TailwindElement):
     def __init__(self, text: str = '', base_classes: list[str] = None):
-        super().__init__('span', base_classes)
+        super().__init__('p', base_classes)
         self._text = text
-        self._props['innerHTML'] = text
+        self._props['innerHTML'] = html.escape(str(text))
 
     @property
     def text(self):
@@ -38,12 +39,12 @@ class Text(TailwindElement):
     @text.setter
     def text(self, value):
         self._text = str(value)
-        self._props['innerHTML'] = self._text
+        self._props['innerHTML'] = html.escape(self._text)
         self.update()
 
 class Divider(TailwindElement):
     def __init__(self, base_classes: list[str] = None):
-        classes = ['w-full', 'h-px', 'bg-gray-200']
+        classes = ['w-full', 'h-px', 'bg-gray-200', 'border-0']
         if base_classes:
             classes.extend(base_classes)
-        super().__init__('div', classes)
+        super().__init__('hr', classes)

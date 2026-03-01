@@ -3,12 +3,35 @@ Live Preview Engine
 """
 import importlib.util
 import sys
+import inspect
+import traceback
 from pathlib import Path
 from nicegui import ui
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
-def preview_environment(views_path: str = "product/views"):
+def preview_environment(views_path: str = ".designgui/product/views"):
+    try:
+        import json
+        config = json.loads(Path(".designgui/config.json").read_text())
+        locale = config.get("locale", "en-US")
+        font_family = config.get("font_family", "Inter, sans-serif")
+    except Exception:
+        locale = "en-US"
+        font_family = "Inter, sans-serif"
+        
+    # Global CSS injection for CJK and standard typographies
+    ui.add_head_html(f'<style>body {{ font-family: {font_family}; }}</style>')
     ui.add_head_html('<script src="https://cdn.tailwindcss.com"></script>')
-    ui.query('body').classes('p-0 m-0 bg-gray-50')
+    
+    # RTL Parsing natively skipping Hebrew explicitly as requested
+    rtl_locales = ["ar", "fa", "ur"]
+    if any(locale.startswith(r) for r in rtl_locales) and not locale.startswith("he"):
+        ui.query('html').props('dir="rtl"')
+        ui.query('body').classes('p-0 m-0 bg-gray-50 text-right')
+    else:
+        ui.query('html').props('dir="ltr"')
+        ui.query('body').classes('p-0 m-0 bg-gray-50 text-left')
     
     with ui.column().classes('w-full h-screen p-0 m-0'):
         # Header / Controls
@@ -21,10 +44,8 @@ def preview_environment(views_path: str = "product/views"):
                 # The dropdown auto re-renders on change
                 view_select = ui.select(options=[], value=None, on_change=lambda e: render_generated_view(e.value)).classes('w-48')
                 
-                def trigger_reload():
-                    if view_select.value:
-                        render_generated_view(view_select.value)
-                ui.button('Refresh', on_click=trigger_reload).props('outline color=primary size=sm')
+                # Watchdog replaces manual Refresh buttons
+                ui.label('(Auto-Saving via Watchdog)').classes('text-xs text-green-600 font-bold ml-2')
 
         # Empty container waiting for AI code
         preview_pane = ui.column().classes('w-full h-full p-8 overflow-y-auto')
@@ -54,6 +75,10 @@ def preview_environment(views_path: str = "product/views"):
                 # Dynamically load the python file
                 module_name = f"dynamic_view_{filename[:-3]}"
                 
+                # Force strictly pure reload by purging stale references
+                if module_name in sys.modules:
+                    del sys.modules[module_name]
+                
                 # Make sure views_path is in sys.path for relative imports within the views
                 views_dir_str = str(Path.cwd() / Path(views_path))
                 if views_dir_str not in sys.path:
@@ -61,7 +86,6 @@ def preview_environment(views_path: str = "product/views"):
                     
                 spec = importlib.util.spec_from_file_location(module_name, str(module_path))
                 module = importlib.util.module_from_spec(spec)
-                # Overwrite module in sys.modules to ensure reload
                 sys.modules[module_name] = module
                 spec.loader.exec_module(module)
                 
@@ -70,7 +94,6 @@ def preview_environment(views_path: str = "product/views"):
                 if hasattr(module, 'render_view'):
                     target_func = getattr(module, 'render_view')
                 else:
-                    import inspect
                     for name, obj in inspect.getmembers(module, inspect.isfunction):
                         if obj.__module__ == module_name:
                             target_func = obj
@@ -85,7 +108,6 @@ def preview_environment(views_path: str = "product/views"):
                         ui.label(f"Could not find a render function in {filename}. Please define 'render_view()'.").classes('text-red-500 font-bold p-4 bg-red-50 rounded border border-red-200 w-full')
 
             except Exception as e:
-                import traceback
                 error_trace = traceback.format_exc()
                 with preview_pane:
                     ui.label("Error Rendering View:").classes('text-red-600 font-bold text-lg')
@@ -94,8 +116,29 @@ def preview_environment(views_path: str = "product/views"):
 
         # Initial population
         update_file_list()
+        
+        # --- WATCHDOG AUTO-RELOAD SUBSYSTEM ---
+        class HotReloadHandler(FileSystemEventHandler):
+            def on_modified(self, event):
+                if event.is_directory or not event.src_path.endswith('.py'):
+                    return
+                # Defer to nicegui's main event loop explicitly 
+                ui.timer(0.1, update_file_list, once=True)
+                
+            def on_created(self, event):
+                if event.is_directory or not event.src_path.endswith('.py'):
+                    return
+                ui.timer(0.1, update_file_list, once=True)
 
-def run_server(port: int = 8080, views_path: str = "product/views"):
+        views_dir_path = str(Path.cwd() / Path(views_path))
+        if Path(views_dir_path).exists():
+            observer = Observer()
+            observer.schedule(HotReloadHandler(), views_dir_path, recursive=False)
+            observer.start()
+            # Cleanly teardown when page unloads
+            ui.on('disconnect', observer.stop)
+
+def run_server(port: int = 8080, views_path: str = ".designgui/product/views"):
     @ui.page('/')
     def index():
         preview_environment(views_path=views_path)

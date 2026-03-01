@@ -1,3 +1,4 @@
+import html
 from typing import Callable, Optional, Any
 from .base import TailwindElement
 
@@ -14,8 +15,8 @@ class Button(TailwindElement):
             
         super().__init__('button', classes)
         
-        # We manually inject the text using HTML content
-        self._props['innerHTML'] = text
+        # We manually inject the text using HTML content securely
+        self._props['innerHTML'] = html.escape(str(text))
         
         # Variants dictionary
         variants = {
@@ -47,24 +48,144 @@ class Input(TailwindElement):
         self._props['placeholder'] = placeholder
         self._props['value'] = value
         
+        # Add state tracking for bound change listeners to avoid duplicate events
+        self._on_change_callback = on_change
+        
         # Handle the raw DOM input event
         # When user types, nicegui sends an event, we update internal value and call user callback if any
         def handle_input(e: Any):
-            val = e.args.get('target.value', e.args) # Fallback if just passed directly
+            # Safe extraction avoiding passing raw dict arrays into layout
+            val = e.args.get('target.value', '') if isinstance(e.args, dict) else ''
             self.value = val
             self._props['value'] = val
-            if on_change:
-                on_change(val)
+            if self._on_change_callback:
+                self._on_change_callback(val)
                 
-        # To get the raw value back from the input event, we must tell nicegui what event data to include
-        # In Vue, native input events pass an Event object where the value is in target.value
         self.on('input', handle_input, args=['target.value'])
         
     def bind_value_to(self, target_object, target_name: str):
         """Helper to simulate two-way binding or pushing value to model."""
         def handle_change(v):
             setattr(target_object, target_name, v)
-        self.on('input', lambda e: handle_change(e.args.get('target.value', e.args)), args=['target.value'])
+            
+        # Instead of directly binding a second input map causing duplicates, hook into existing callback loop.
+        old_cb = self._on_change_callback
+        def chained_cb(val):
+            if old_cb:
+                old_cb(val)
+            handle_change(val)
+            
+        self._on_change_callback = chained_cb
         # Initialize
         setattr(target_object, target_name, self.value)
         return self
+
+class ToggleSwitch(TailwindElement):
+    def __init__(self, label: str = "", value: bool = False, on_change: Optional[Callable] = None, base_classes: list[str] = None):
+        """
+        Tailwind Wrapper for a checkbox acting as a toggle switch.
+        """
+        classes = ['flex', 'items-center', 'cursor-pointer']
+        if base_classes:
+            classes.extend(base_classes)
+        super().__init__('label', classes)
+        
+        self.value = value
+        self._on_change_callback = on_change
+        
+        # HTML DOM construction using relative grouping
+        # The actual input is hidden, the div is styled based on peer-checked
+        self._input_id = f"toggle-{id(self)}"
+        
+        def render_dom():
+            checked_attr = 'checked' if self.value else ''
+            safe_label = html.escape(label)
+            
+            dom = f"""
+            <div class="relative">
+                <input type="checkbox" id="{self._input_id}" class="sr-only peer" {checked_attr}>
+                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </div>
+            <span class="ml-3 text-sm font-medium text-gray-900">{safe_label}</span>
+            """
+            self._props['innerHTML'] = dom
+            
+        render_dom()
+        
+        # We need to bind to the change event of the native checkbox inside the label
+        # NiceGUI captures events bubbling up to the wrapper label element natively
+        def handle_change(e: Any):
+            self.value = not self.value
+            render_dom()
+            if self._on_change_callback:
+                self._on_change_callback(self.value)
+                
+        self.on('change', handle_change)
+
+class Slider(TailwindElement):
+    def __init__(self, min: float = 0, max: float = 100, step: float = 1, value: float = 50, on_change: Optional[Callable] = None, base_classes: list[str] = None):
+        """
+        Tailwind Wrapper for an input[type=range].
+        """
+        classes = ['w-full', 'h-2', 'bg-gray-200', 'rounded-lg', 'appearance-none', 'cursor-pointer']
+        if base_classes:
+            classes.extend(base_classes)
+        super().__init__('input', classes)
+        
+        self._props['type'] = 'range'
+        self._props['min'] = min
+        self._props['max'] = max
+        self._props['step'] = step
+        self._props['value'] = value
+        
+        self.value = value
+        self._on_change_callback = on_change
+        
+        def handle_input(e: Any):
+            val = float(e.args.get('target.value', self.value)) if isinstance(e.args, dict) else float(e.args)
+            self.value = val
+            self._props['value'] = val
+            if self._on_change_callback:
+                self._on_change_callback(val)
+                
+        self.on('input', handle_input, args=['target.value'])
+
+class RadioGroup(TailwindElement):
+    def __init__(self, options: List[str], value: str, name: str = "radio-group", on_change: Optional[Callable] = None, base_classes: list[str] = None):
+        """
+        Tailwind Wrapper for a group of radio buttons.
+        """
+        classes = ['flex', 'flex-col', 'space-y-2']
+        if base_classes:
+            classes.extend(base_classes)
+        super().__init__('div', classes)
+        
+        self.value = value
+        self.options = options
+        self._name = name
+        self._on_change_callback = on_change
+        
+        def render_dom():
+            dom = ""
+            for opt in self.options:
+                safe_opt = html.escape(opt)
+                checked = 'checked' if opt == self.value else ''
+                dom += f"""
+                <div class="flex items-center">
+                    <input type="radio" value="{safe_opt}" name="{self._name}" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500" {checked}>
+                    <label class="ml-2 text-sm font-medium text-gray-900">{safe_opt}</label>
+                </div>
+                """
+            self._props['innerHTML'] = dom
+            
+        render_dom()
+        
+        def handle_change(e: Any):
+            # Target value bubbling from radio click
+            val = e.args.get('target.value', self.value) if isinstance(e.args, dict) else self.value
+            self.value = val
+            render_dom()
+            if self._on_change_callback:
+                self._on_change_callback(val)
+                
+        self.on('change', handle_change, args=['target.value'])
