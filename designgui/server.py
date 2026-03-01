@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from nicegui import ui
 
-def preview_environment():
+def preview_environment(views_path: str = "product/views"):
     ui.add_head_html('<script src="https://cdn.tailwindcss.com"></script>')
     ui.query('body').classes('p-0 m-0 bg-gray-50')
     
@@ -30,7 +30,7 @@ def preview_environment():
         preview_pane = ui.column().classes('w-full h-full p-8 overflow-y-auto')
         
         def update_file_list():
-            views_dir = Path.cwd() / "product" / "views"
+            views_dir = Path.cwd() / Path(views_path)
             if views_dir.exists():
                 py_files = [f.name for f in views_dir.glob("*.py") if f.name != "__init__.py"]
                 view_select.options = py_files
@@ -43,7 +43,7 @@ def preview_environment():
             if not filename:
                 return
             
-            module_path = Path.cwd() / "product" / "views" / filename
+            module_path = Path.cwd() / Path(views_path) / filename
             if not module_path.exists():
                 ui.notify(f"View file {filename} not found.")
                 return
@@ -54,8 +54,8 @@ def preview_environment():
                 # Dynamically load the python file
                 module_name = f"dynamic_view_{filename[:-3]}"
                 
-                # Make sure product/views is in sys.path for relative imports within the views
-                views_dir_str = str(Path.cwd() / "product" / "views")
+                # Make sure views_path is in sys.path for relative imports within the views
+                views_dir_str = str(Path.cwd() / Path(views_path))
                 if views_dir_str not in sys.path:
                     sys.path.insert(0, views_dir_str)
                     
@@ -95,9 +95,9 @@ def preview_environment():
         # Initial population
         update_file_list()
 
-def run_server(port: int = 8080):
+def run_server(port: int = 8080, views_path: str = "product/views"):
     @ui.page('/')
     def index():
-        preview_environment()
+        preview_environment(views_path=views_path)
         
     ui.run(title='Nice Design OS - Live Preview', port=port, reload=False)
