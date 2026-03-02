@@ -1,0 +1,9 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.5, pytest-8.4.1, pluggy-1.6.0 -- C:\Python313\python.exe
+cachedir: .pytest_cache
+rootdir: D:\DesignGUI
+configfile: pyproject.toml
+plugins: anyio-4.11.0
+collecting ... collected 0 items
+
+============================ no tests ran in 0.13s ============================

@@ -110,13 +110,20 @@ class ToggleSwitch(TailwindElement):
             """
             self._props['innerHTML'] = dom
             
-        render_dom()
+        self.render_dom = render_dom # Make render_dom an instance method
+        self.render_dom()
         
         # We need to bind to the change event of the native checkbox inside the label
         # NiceGUI captures events bubbling up to the wrapper label element natively
         def handle_change(e: Any):
-            self.value = not self.value
-            render_dom()
+            # Read the raw DOM checked state primarily, falling back to python inversion securely
+            if e.args and isinstance(e.args, dict) and 'target.checked' in e.args:
+                self.value = bool(e.args.get('target.checked'))
+            else:
+                self.value = not self.value
+                
+            self.render_dom()
+            self.update()
             if self._on_change_callback:
                 self._on_change_callback(self.value)
                 

@@ -1,4 +1,11 @@
 """
 Nice Design OS
 """
-__version__ = "0.1.0"
+import importlib.metadata
+
+try:
+    __version__ = importlib.metadata.version("designgui")
+except Exception:
+    __version__ = "unknown"
+
+from .ui_lib import *

@@ -68,10 +68,12 @@ class Sheet(TailwindElement):
         self.classes(remove='translate-x-full')
         return self
         
-    def close(self):
-        self.is_open = False
-        self.classes(add='translate-x-full')
-        return self
+    def __enter__(self):
+        """Override standard NiceGUI context execution pointing nested children directly into content_area"""
+        return self.content_area.__enter__()
+        
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return self.content_area.__exit__(exc_type, exc_val, exc_tb)
         
     def default_slot(self):
         # When users use `with sheet:`, redirect elements into the content_area

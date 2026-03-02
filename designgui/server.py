@@ -5,14 +5,15 @@ import importlib.util
 import sys
 import inspect
 import traceback
+import json
+import time
 from pathlib import Path
-from nicegui import ui
+from nicegui import ui, app, Client
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 def preview_environment(views_path: str = ".designgui/product/views"):
     try:
-        import json
         config = json.loads(Path(".designgui/config.json").read_text())
         locale = config.get("locale", "en-US")
         font_family = config.get("font_family", "Inter, sans-serif")
@@ -26,7 +27,7 @@ def preview_environment(views_path: str = ".designgui/product/views"):
     
     # RTL Parsing natively skipping Hebrew explicitly as requested
     rtl_locales = ["ar", "fa", "ur"]
-    if any(locale.startswith(r) for r in rtl_locales) and not locale.startswith("he"):
+    if any(locale.startswith(r) for r in rtl_locales):
         ui.query('html').props('dir="rtl"')
         ui.query('body').classes('p-0 m-0 bg-gray-50 text-right')
     else:

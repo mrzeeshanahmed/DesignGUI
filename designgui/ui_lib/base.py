@@ -11,11 +11,11 @@ class TailwindElement(Element):
             self.classes(' '.join(base_classes))
             
     def apply_variant(self, variant_dict: dict, selected: str):
-        """
-        Applies a specific variant of Tailwind classes based on a selection key.
-        """
+        """Standard method to enforce predefined stylistic structures."""
         if selected in variant_dict:
             self.classes(variant_dict[selected])
+        else:
+            raise ValueError(f"Variant '{selected}' not found. Available options: {list(variant_dict.keys())}")
 
     def bind_attribute(self, attr_name: str, target_object, target_name: str):
         """

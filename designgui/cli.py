@@ -4,6 +4,8 @@ import typer
 import sys
 import shutil
 import importlib.util
+import importlib.metadata
+import subprocess
 from pathlib import Path
 
 # Provide a global app description for the Typer help menu
@@ -18,8 +20,10 @@ app = typer.Typer(
 
 def version_callback(value: bool):
     if value:
-        config = get_config()
-        version = config.get("designgui_version", "unknown")
+        try:
+            version = importlib.metadata.version("designgui")
+        except Exception:
+            version = "unknown (not installed via pip)"
         typer.echo(f"DesignGUI Version: {version}")
         raise typer.Exit()
 
@@ -88,7 +92,9 @@ def get_locale_strings():
         "cli_start_engine": "Starting Live Preview Engine on port {port}...",
         "cli_daemon_init": "Initializing Autonomous Daemon on port {port}...",
         "cli_remove_start": "Removing DesignGUI from the project...",
-        "cli_remove_success": "DesignGUI has been safely removed from this project."
+        "cli_remove_success": "DesignGUI has been safely removed from this project.",
+        "cli_security_engine_warning": "⚠️  WARNING: DESIGNGUI EXECUTES PYTHON PAYLOADS DYNAMICALLY ⚠️\nThe Live Preview engine will automatically execute code dropped into the `.designgui/product/views/` directory. Do not place untrusted third-party scripts here.\n",
+        "cli_security_daemon_warning": "⚠️  WARNING: DESIGNGUI EXECUTES PYTHON PAYLOADS DYNAMICALLY ⚠️\nThe Daemon engine will automatically execute code dropped into the `.designgui/product/views/` directory. Do not place untrusted third-party scripts here.\n"
     }
 
 def smart_gitignore_append(cwd: Path):
@@ -136,10 +142,17 @@ def init() -> None:
 [3] Copilot/JetBrains
 [4] Generic/Cloud IDE
 [5] Autonomous Agent
+[6] Tongyi Lingma
+[7] Baidu Comate
+[8] CodeGeeX
 Enter your choice:"""
     environment_input = typer.prompt(env_choices, default="1")
     
-    env_map = {"1": "Cursor", "2": "Windsurf", "3": "Copilot/JetBrains", "4": "Generic/Cloud IDE", "5": "Autonomous Agent"}
+    env_map = {
+        "1": "Cursor", "2": "Windsurf", "3": "Copilot/JetBrains",
+        "4": "Generic/Cloud IDE", "5": "Autonomous Agent",
+        "6": "Tongyi Lingma", "7": "Baidu Comate", "8": "CodeGeeX"
+    }
     environment = env_map.get(environment_input, "Unknown")
     
     port_input = typer.prompt(strings["cli_port_prompt"], default="8080")
@@ -149,7 +162,6 @@ Enter your choice:"""
         daemon_port = 8080
         
     config = {
-        "designgui_version": "1.0.0",
         "environment": environment,
         "daemon_port": daemon_port,
         "locale": "en-US",
@@ -182,12 +194,13 @@ Enter your choice:"""
 
 You are operating in a Nice Design OS project. You must strictly follow these rules:
 
-1. You are an expert Python UI developer using the `designgui.ui_lib` framework.
-2. DO NOT use React, Vue, HTML, or standard NiceGUI elements like `ui.button` or `ui.input`.
-3. ONLY use primitives from `designgui.ui_lib.primitives` (Container, Stack, Flex, Box, Text, Divider) and `designgui.ui_lib.inputs` (Button, Input).
+To build the interface:
+1. Wrap the entire view in a `Container` from `designgui.ui_lib.primitives`.
+2. Do not use standard NiceGUI `.classes()` chained directly onto NiceGUI elements unless strictly necessary. Instead, use the `base_classes` array constructor argument.
+3. ONLY use components from `designgui.ui_lib`. Available Primitives: (Container, Stack, Flex, Box, Text, Divider). Inputs: (Button, Input, ToggleSwitch, Slider, RadioGroup, Select, Checkbox, Textarea). Display: (Image, Icon, Avatar, DropdownMenu, Table, Tabs, Accordion). Layout: (Sidebar, Header, Sheet). Composites: (AuthForm, StatGrid, EmptyState, Stepper, TopNav, DataFeed). Feedback: (Toast, Skeleton, Spinner).
+4. Use Tailwind CSS exclusively. Do not write custom CSS unless explicitly requested.
 
-## The 5-Loop Flow
-When given a feature prompt, execute these steps:
+When building state logic:
 - **Phase 1 (Vision)**: Outline concept in `.designgui/product/specs/vision.md` and Pydantic schema in `.designgui/product/models.py`.
 - **Phase 2 (Shell)**: Build global layout wrapper in `.designgui/product/shell.py`.
 - **Phase 3 (Section)**: Generate mock data and a UI view in `.designgui/product/views/{name}.py` using the primitive components.
@@ -196,16 +209,20 @@ When given a feature prompt, execute these steps:
     (designgui_dir / "INSTRUCTIONS.md").write_text(universal_instruction_text)
     
     # 4. Smart Append IDE Rules
-    pointer_text = "\\n\\n# DesignGUI Agent Rules\\nYou are operating in a DesignGUI project. You MUST read the .designgui/INSTRUCTIONS.md file before answering prompts or generating code.\\n"
+    pointer_text = "\n\n# DesignGUI Agent Rules\nYou are operating in a DesignGUI project. You MUST read the .designgui/INSTRUCTIONS.md file before answering prompts or generating code.\n"
     
     rule_file_map = {
-        "1": ".cursorrules",
-        "2": ".windsurfrules",
-        "3": ".github/copilot-instructions.md",
-        "4": ".prompts.md"
+        "Cursor": ".cursorrules",
+        "Windsurf": ".windsurfrules",
+        "Copilot/JetBrains": ".github/copilot-instructions.md",
+        "Tongyi Lingma": ".lingmarules",
+        "Baidu Comate": ".comate_instructions",
+        "CodeGeeX": ".codegeex_rules",
+        "Generic/Cloud IDE": ".prompts.md",
+        "Autonomous Agent": ".clinerules"
     }
     
-    selected_file = rule_file_map.get(environment_input)
+    selected_file = rule_file_map.get(environment)
     if selected_file:
         smart_append_instruction(cwd / selected_file, pointer_text)
         
@@ -300,12 +317,14 @@ if __name__ in {{"__main__", "__mp_main__"}}:
 
 @app.command()
 def start() -> None:
-    """Start the Live Preview Engine in the foreground equipped with hot-reloading file selection."""
-    typer.echo(typer.style("\n⚠️  WARNING: DESIGNGUI EXECUTES PYTHON PAYLOADS DYNAMICALLY ⚠️", fg=typer.colors.RED, bold=True))
-    typer.echo(typer.style("The Live Preview engine will automatically execute code dropped into the `.designgui/product/views/` directory. Do not place untrusted third-party scripts here.\n", fg=typer.colors.YELLOW))
+    """Start the interactive Live Preview engine locally."""
+    cwd = Path.cwd()
+    strings = get_locale_strings()
+    
+    typer.echo(typer.style(strings["cli_security_engine_warning"], fg=typer.colors.YELLOW))
     
     config = get_config()
-    strings = get_locale_strings()
+    # strings = get_locale_strings() # Already called above
     port = config.get("daemon_port", 8080)
     views_path = config.get("paths", {}).get("views", ".designgui/product/views")
     msg = strings["cli_start_engine"].format(port=port)
@@ -317,14 +336,16 @@ def start() -> None:
     from designgui.server import run_server
     run_server(port=port, views_path=views_path)
 
-@app.command()
-def daemon(port: int = typer.Option(None, help="Port to run the daemon on (overrides config.json)")) -> None:
-    """Run the live-preview engine as a background watcher for autonomous agents."""
-    typer.echo(typer.style("\n⚠️  WARNING: DESIGNGUI EXECUTES PYTHON PAYLOADS DYNAMICALLY ⚠️", fg=typer.colors.RED, bold=True))
-    typer.echo(typer.style("The Daemon engine will automatically execute code dropped into the `.designgui/product/views/` directory. Do not place untrusted third-party scripts here.\n", fg=typer.colors.YELLOW))
+@app.command("daemon")
+def daemon_command(port: int = typer.Option(None, help="Port to run the daemon on (overrides config.json)")) -> None:
+    """Initialize the backend daemon enabling Autonomous Agents to execute previews structurally in the background."""
+    cwd = Path.cwd()
+    strings = get_locale_strings()
+    
+    typer.echo(typer.style(strings["cli_security_daemon_warning"], fg=typer.colors.YELLOW))
     
     config = get_config()
-    strings = get_locale_strings()
+    # strings = get_locale_strings() # Already called above
     target_port = port if port else config.get("daemon_port", 8080)
     views_path = config.get("paths", {}).get("views", ".designgui/product/views")
     msg = strings["cli_daemon_init"].format(port=target_port)
@@ -334,8 +355,16 @@ def daemon(port: int = typer.Option(None, help="Port to run the daemon on (overr
     if str(Path.cwd()) not in sys.path:
         sys.path.insert(0, str(Path.cwd()))
         
-    from designgui.server import run_server
-    run_server(port=target_port, views_path=views_path)
+    cmd = [sys.executable, "-m", "designgui.cli", "start", "--port", str(target_port)]
+    
+    if sys.platform == "win32":
+        # Windows detached process
+        subprocess.Popen(cmd, creationflags=subprocess.DETACHED_PROCESS)
+    else:
+        # Unix/Linux background daemon
+        subprocess.Popen(cmd, start_new_session=True)
+        
+    typer.echo(typer.style("Daemon launched successfully in the background.", fg=typer.colors.GREEN))
 
 @app.command("remove")
 def remove() -> None:

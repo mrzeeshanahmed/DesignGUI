@@ -42,21 +42,19 @@ class Toast:
         """
         safe_msg = html.escape(message)
         
-        bg_colors = {
-            'success': 'bg-green-500',
-            'error': 'bg-red-500',
-            'warning': 'bg-yellow-500',
-            'info': 'bg-blue-500'
+        # NiceGUI notify wraps Quasar directly.
+        # Ensure we map tailwind semantic hex strings securely rather than class strings breaking QNotify.
+        color_map = {
+            'info': '#3b82f6',     # blue-500
+            'success': '#22c55e',  # green-500
+            'warning': '#f59e0b',  # amber-500
+            'error': '#ef4444'     # red-500
         }
+        hex_color = color_map.get(type, '#374151') # gray-700 fallback
         
-        color_class = bg_colors.get(type, 'bg-gray-800')
-        
-        # Override the quasar default classes by injecting tailwind natively 
-        # NiceGUI notify supports some kwargs but we must use styling overrides
         ui.notify(
             message=safe_msg,
             timeout=duration_ms,
-            html=True,
-            classes=f'{color_class} text-white font-medium p-4 rounded-md shadow-lg',
+            color=hex_color,
             position='bottom'
         )

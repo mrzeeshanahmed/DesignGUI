@@ -14,26 +14,16 @@ class AuthForm(TailwindElement):
         super().__init__('div', classes)
         
         with self:
-            Stack(['w-full', 'space-y-6']).classes('m-0 w-full')
             
-            with Stack(['w-full', 'items-center', 'mb-6']):
-                Text(title, ['text-2xl', 'font-bold', 'text-gray-900'])
-                Text("Enter your credentials to access your account.", ['text-sm', 'text-gray-500', 'mt-2', 'text-center'])
+            with Box(['w-full']):
+                Text("Password", ['block', 'text-sm', 'font-medium', 'text-gray-700', 'mb-1'])
+                self.password_input = Input(placeholder="••••••••", base_classes=['w-full'])
+                self.password_input._props['type'] = 'password'
             
-            with Stack(['w-full', 'space-y-4']):
-                with Box(['w-full']):
-                    Text("Email", ['block', 'text-sm', 'font-medium', 'text-gray-700', 'mb-1'])
-                    self.email_input = Input(placeholder="user@example.com", base_classes=['w-full'])
-                
-                with Box(['w-full']):
-                    Text("Password", ['block', 'text-sm', 'font-medium', 'text-gray-700', 'mb-1'])
-                    self.password_input = Input(placeholder="••••••••", base_classes=['w-full'])
-                    self.password_input._props['type'] = 'password'
-                
-                with Flex(['w-full', 'justify-between', 'items-center']):
-                    self.remember_toggle = ToggleSwitch("Remember Me")
-                    Button("Forgot password?", variant='ghost', base_classes=['text-sm', 'text-blue-600', 'hover:text-blue-500', 'px-0'])
-                
+            with Flex(['w-full', 'justify-between', 'items-center']):
+                self.remember_toggle = ToggleSwitch("Remember Me")
+                Button("Forgot password?", variant='ghost', base_classes=['text-sm', 'text-blue-600', 'hover:text-blue-500', 'px-0'])
+            
             self.submit_btn = Button("Sign In", variant='primary', base_classes=['w-full', 'mt-6', 'py-3'])
 
 class StatGrid(TailwindElement):
