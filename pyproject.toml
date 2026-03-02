@@ -40,3 +40,7 @@ designgui = "designgui.cli:app"
 [tool.setuptools.packages.find]
 include = ["designgui", "designgui.*"]
 exclude = ["product*", "production_app*", "venv*"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0.0", "pytest-asyncio", "mypy"]
+

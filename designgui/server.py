@@ -124,7 +124,12 @@ def preview_environment(views_path: str = ".designgui/product/views"):
                 if event.is_directory or not event.src_path.endswith('.py'):
                     return
                 # Defer to nicegui's main event loop explicitly 
-                ui.timer(0.1, update_file_list, once=True)
+                def handle_reload():
+                    update_file_list()
+                    if view_select.value:
+                        render_generated_view(view_select.value)
+                        
+                ui.timer(0.1, handle_reload, once=True)
                 
             def on_created(self, event):
                 if event.is_directory or not event.src_path.endswith('.py'):

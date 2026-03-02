@@ -10,6 +10,6 @@
     "cli_daemon_init": "Initializing Autonomous Daemon on port {port}...",
     "cli_remove_start": "Removing DesignGUI from the project...",
     "cli_remove_success": "DesignGUI has been safely removed from this project.",
-    "cli_security_engine_warning": "⚠️  WARNING: DESIGNGUI EXECUTES PYTHON PAYLOADS DYNAMICALLY ⚠️\\nThe Live Preview engine will automatically execute code dropped into the `.designgui/product/views/` directory. Do not place untrusted third-party scripts here.\\n",
-    "cli_security_daemon_warning": "⚠️  WARNING: DESIGNGUI EXECUTES PYTHON PAYLOADS DYNAMICALLY ⚠️\\nThe Daemon engine will automatically execute code dropped into the `.designgui/product/views/` directory. Do not place untrusted third-party scripts here.\\n"
+    "cli_security_engine_warning": "⚠️  WARNING: DESIGNGUI EXECUTES PYTHON PAYLOADS DYNAMICALLY ⚠️\nThe Live Preview engine will automatically execute code dropped into the `.designgui/product/views/` directory. Do not place untrusted third-party scripts here.\n",
+    "cli_security_daemon_warning": "⚠️  WARNING: DESIGNGUI EXECUTES PYTHON PAYLOADS DYNAMICALLY ⚠️\nThe Daemon engine will automatically execute code dropped into the `.designgui/product/views/` directory. Do not place untrusted third-party scripts here.\n"
 }

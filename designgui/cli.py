@@ -117,8 +117,13 @@ def get_config():
         except Exception:
             pass
     # Default fallbacks
+    try:
+        fallback_version = importlib.metadata.version('designgui')
+    except Exception:
+        fallback_version = 'unknown'
+        
     return {
-        "designgui_version": "1.0.0",
+        "designgui_version": fallback_version,
         "environment": "Unknown",
         "daemon_port": 8080,
         "paths": {
@@ -234,7 +239,13 @@ You are outlining the app concept and data structures in `.designgui/product/spe
     shell_md = """# Design Shell (/design-shell)
 You are building the layout in `.designgui/product/shell.py` using `Container, Stack, Flex, Box`."""
     section_md = """# Component API Cheat Sheet (/shape-section)
-Use ONLY components from `designgui.ui_lib`. Scaffold a base feature screen in `.designgui/product/views/_.py`."""
+Use ONLY components from `designgui.ui_lib`. Scaffold a base feature screen in `.designgui/product/views/_.py`.
+Available Primitives: (Container, Stack, Flex, Box, Text, Divider).
+Inputs: (Button, Input, ToggleSwitch, Slider, RadioGroup, Select, Checkbox, Textarea).
+Display: (Image, Icon, Avatar, DropdownMenu, Table, Tabs, Accordion, Card, Badge).
+Layout: (Sidebar, Header, Sheet, Modal).
+Composites: (AuthForm, StatGrid, EmptyState, Stepper, TopNav, DataFeed).
+Feedback: (Toast, Skeleton, Spinner)."""
     screen_md = """# Design Screen Refinement (/design-screen)
 You are refining a view. Wire up Python callbacks (`on_click=lambda:...`) and manage state."""
     
@@ -297,7 +308,7 @@ def route_{view_name}():
     render_{view_name}()
 """)
         
-    imports_block = "\\n".join(imports)
+    imports_block = "\n".join(imports)
     routes_block = "".join(routes)
 
     main_py_content = f"""from nicegui import ui
@@ -316,7 +327,7 @@ if __name__ in {{"__main__", "__mp_main__"}}:
     typer.echo(f"Run `cd production_app` and `python main.py` to start the headless server on {host}:{port}.")
 
 @app.command()
-def start() -> None:
+def start(port: int = typer.Option(None, hidden=True)) -> None:
     """Start the interactive Live Preview engine locally."""
     cwd = Path.cwd()
     strings = get_locale_strings()
@@ -325,7 +336,8 @@ def start() -> None:
     
     config = get_config()
     # strings = get_locale_strings() # Already called above
-    port = config.get("daemon_port", 8080)
+    if port is None:
+        port = config.get("daemon_port", 8080)
     views_path = config.get("paths", {}).get("views", ".designgui/product/views")
     msg = strings["cli_start_engine"].format(port=port)
     typer.echo(msg)
@@ -373,7 +385,7 @@ def remove() -> None:
     strings = get_locale_strings()
     typer.echo(strings["cli_remove_start"])
     
-    rule_files = [".cursorrules", ".windsurfrules", ".clinerules", ".github/copilot-instructions.md", ".prompts.md"]
+    rule_files = [".cursorrules", ".windsurfrules", ".clinerules", ".github/copilot-instructions.md", ".prompts.md", ".lingmarules", ".comate_instructions", ".codegeex_rules"]
     for rf in rule_files:
         smart_remove_instruction(cwd / rf)
         
@@ -384,7 +396,11 @@ def remove() -> None:
     legacy_instructions = cwd / "DESIGNGUI_INSTRUCTIONS.md"
     if legacy_instructions.exists():
         legacy_instructions.unlink()
-        
+
+    production_app_dir = cwd / "production_app"
+    if production_app_dir.exists():
+        shutil.rmtree(production_app_dir, ignore_errors=True)
+    
     typer.echo(typer.style(strings["cli_remove_success"], fg=typer.colors.GREEN))
 
 if __name__ == "__main__":

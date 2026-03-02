@@ -12,7 +12,7 @@ class Skeleton(TailwindElement):
         classes = ['animate-pulse', 'bg-gray-200']
         
         if shape == 'circle':
-            classes.append('rounded-full')
+            classes.extend(['rounded-full', 'w-10', 'h-10'])
         elif shape == 'text':
             classes.extend(['h-4', 'rounded', 'w-3/4'])
         else:

@@ -1,5 +1,5 @@
 import html
-from typing import Callable, Optional, Any
+from typing import Callable, Optional, Any, List
 from .base import TailwindElement
 
 class Button(TailwindElement):
@@ -192,7 +192,109 @@ class RadioGroup(TailwindElement):
             val = e.args.get('target.value', self.value) if isinstance(e.args, dict) else self.value
             self.value = val
             render_dom()
+            self.update()
             if self._on_change_callback:
                 self._on_change_callback(val)
                 
         self.on('change', handle_change, args=['target.value'])
+
+class Select(TailwindElement):
+    def __init__(self, options: List[str], value: str = None, on_change: Optional[Callable] = None, base_classes: list[str] = None):
+        """
+        Tailwind Wrapper for a native HTML <select>.
+        """
+        classes = ['block', 'w-full', 'pl-3', 'pr-10', 'py-2', 'text-base', 'border-gray-300', 'focus:outline-none', 'focus:ring-blue-500', 'focus:border-blue-500', 'sm:text-sm', 'rounded-md', 'bg-white']
+        if base_classes:
+            classes.extend(base_classes)
+        super().__init__('select', classes)
+        
+        self.value = value if value else (options[0] if options else None)
+        self.options = options
+        self._on_change_callback = on_change
+        
+        def render_dom():
+            dom = ""
+            for opt in self.options:
+                safe_opt = html.escape(opt)
+                selected = 'selected' if opt == self.value else ''
+                dom += f'<option value="{safe_opt}" {selected}>{safe_opt}</option>'
+            self._props['innerHTML'] = dom
+            
+        render_dom()
+        
+        def handle_change(e: Any):
+            val = e.args.get('target.value', self.value) if isinstance(e.args, dict) else self.value
+            self.value = val
+            render_dom()
+            self.update()
+            if self._on_change_callback:
+                self._on_change_callback(val)
+                
+        self.on('change', handle_change, args=['target.value'])
+
+class Checkbox(TailwindElement):
+    def __init__(self, label: str = "", value: bool = False, on_change: Optional[Callable] = None, base_classes: list[str] = None):
+        """
+        Tailwind Wrapper for a native HTML <input type="checkbox">.
+        """
+        classes = ['flex', 'items-center']
+        if base_classes:
+            classes.extend(base_classes)
+        super().__init__('div', classes)
+        
+        self.value = value
+        self._on_change_callback = on_change
+        
+        def render_dom():
+            checked_attr = 'checked' if self.value else ''
+            safe_label = html.escape(label)
+            dom = f"""
+            <input type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" {checked_attr}>
+            <label class="ml-2 block text-sm text-gray-900">{safe_label}</label>
+            """
+            self._props['innerHTML'] = dom
+            
+        render_dom()
+        
+        def handle_change(e: Any):
+            if e.args and isinstance(e.args, dict) and 'target.checked' in e.args:
+                self.value = bool(e.args.get('target.checked'))
+            else:
+                self.value = not self.value
+                
+            render_dom()
+            self.update()
+            if self._on_change_callback:
+                self._on_change_callback(self.value)
+                
+        self.on('change', handle_change)
+
+class Textarea(TailwindElement):
+    def __init__(self, placeholder: str = '', value: str = '', on_change: Optional[Callable] = None, rows: int = 4, base_classes: list[str] = None):
+        """
+        Custom Tailwind Textarea extending raw HTML <textarea>
+        """
+        classes = [
+            'block', 'w-full', 'px-3', 'py-2', 'border', 'border-gray-300', 'rounded-md', 'shadow-sm', 
+            'focus:outline-none', 'focus:border-blue-500', 'focus:ring-1', 'focus:ring-blue-500', 'sm:text-sm'
+        ]
+        if base_classes:
+            classes.extend(base_classes)
+            
+        super().__init__('textarea', classes)
+        
+        self.value = value
+        self._props['placeholder'] = placeholder
+        self._props['rows'] = rows
+        self._props['value'] = value
+        
+        self._on_change_callback = on_change
+        
+        def handle_input(e: Any):
+            val = e.args.get('target.value', '') if isinstance(e.args, dict) else ''
+            self.value = val
+            self._props['value'] = val
+            if self._on_change_callback:
+                self._on_change_callback(val)
+                
+        self.on('input', handle_input, args=['target.value'])

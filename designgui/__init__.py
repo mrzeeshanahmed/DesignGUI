@@ -8,4 +8,3 @@ try:
 except Exception:
     __version__ = "unknown"
 
-from .ui_lib import *

@@ -1,6 +1,7 @@
 import html
 import uuid
 from typing import Optional, List, Dict
+from nicegui import ui
 from .base import TailwindElement
 
 class Image(TailwindElement):
@@ -183,7 +184,7 @@ class Tabs(TailwindElement):
         # Toggle panels explicitly
         for name, panel in self.panels.items():
             if name == tab_name:
-                panel.remove_classes('hidden')
+                panel.classes(remove='hidden')
             else:
                 panel.classes('hidden')
                 
@@ -223,3 +224,81 @@ class Accordion(TailwindElement):
         """
         self._props['innerHTML'] = inner_dom
         self.update()
+
+class Card(TailwindElement):
+    def __init__(self, base_classes: list[str] = None):
+        """
+        A rounded, bordered Box container commonly used for grouping content.
+        """
+        classes = ['bg-white', 'overflow-hidden', 'shadow', 'rounded-lg', 'border', 'border-gray-200']
+        if base_classes:
+            classes.extend(base_classes)
+        super().__init__('div', classes)
+
+class Badge(TailwindElement):
+    def __init__(self, text: str, variant: str = 'primary', base_classes: list[str] = None):
+        """
+        A minimal pill-shaped container for statuses or tags.
+        """
+        classes = ['inline-flex', 'items-center', 'px-2.5', 'py-0.5', 'rounded-full', 'text-xs', 'font-medium']
+        if base_classes:
+            classes.extend(base_classes)
+        super().__init__('span', classes)
+        
+        self._props['innerHTML'] = html.escape(str(text))
+        
+        variants = {
+            'primary': 'bg-blue-100 text-blue-800',
+            'success': 'bg-green-100 text-green-800',
+            'warning': 'bg-yellow-100 text-yellow-800',
+            'danger': 'bg-red-100 text-red-800',
+            'gray': 'bg-gray-100 text-gray-800',
+        }
+        self.apply_variant(variants, variant)
+
+
+
+class Modal(TailwindElement):
+    def __init__(self, title: str = "Dialog", on_close=None, base_classes: list[str] = None):
+        """
+        A Tailwind wrapper bridging NiceGUI's native dialog functions.
+        Uses ui.dialog as the root base natively supporting open/close.
+        """
+        classes = ['fixed', 'inset-0', 'z-50', 'flex', 'items-center', 'justify-center', 'bg-black', 'bg-opacity-50', 'hidden']
+        if base_classes:
+            classes.extend(base_classes)
+        super().__init__('div', classes)
+        
+        self.is_open = False
+        self.on_close = on_close
+        
+        from .primitives import Box, Flex, Text
+        from .inputs import Button
+        
+        with self:
+            with Box(['bg-white', 'rounded-xl', 'shadow-2xl', 'w-full', 'max-w-md', 'overflow-hidden', 'transform', 'transition-all', 'flex', 'flex-col']).on('click', lambda: None, js_handler='event.stopPropagation()'):
+                with Flex(['w-full', 'justify-between', 'items-center', 'px-6', 'py-4', 'border-b', 'border-gray-200']):
+                    Text(title, ['text-lg', 'font-medium', 'text-gray-900']).classes('m-0')
+                    close_btn = Button('X', variant='ghost', base_classes=['text-gray-400', 'hover:text-gray-500', 'p-1', 'm-0'])
+                    close_btn.on('click', self.close)
+                
+                self.content_area = Box(['p-6'])
+        
+        self.on('click', self.close)
+
+    def open(self):
+        self.is_open = True
+        self.classes(remove='hidden')
+        return self
+
+    def close(self):
+        self.is_open = False
+        self.classes('hidden')
+        if self.on_close:
+            self.on_close()
+
+    def __enter__(self):
+        return self.content_area.__enter__()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return self.content_area.__exit__(exc_type, exc_val, exc_tb)

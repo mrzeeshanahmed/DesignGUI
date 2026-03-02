@@ -14,17 +14,27 @@ class AuthForm(TailwindElement):
         super().__init__('div', classes)
         
         with self:
-            
-            with Box(['w-full']):
-                Text("Password", ['block', 'text-sm', 'font-medium', 'text-gray-700', 'mb-1'])
-                self.password_input = Input(placeholder="••••••••", base_classes=['w-full'])
-                self.password_input._props['type'] = 'password'
-            
-            with Flex(['w-full', 'justify-between', 'items-center']):
-                self.remember_toggle = ToggleSwitch("Remember Me")
-                Button("Forgot password?", variant='ghost', base_classes=['text-sm', 'text-blue-600', 'hover:text-blue-500', 'px-0'])
-            
-            self.submit_btn = Button("Sign In", variant='primary', base_classes=['w-full', 'mt-6', 'py-3'])
+            with Stack(['w-full', 'space-y-6']).classes('m-0 w-full'):
+                
+                with Stack(['w-full', 'items-center', 'mb-6']):
+                    Text(title, ['text-2xl', 'font-bold', 'text-gray-900'])
+                    Text("Enter your credentials to access your account.", ['text-sm', 'text-gray-500', 'mt-2', 'text-center'])
+                
+                with Stack(['w-full', 'space-y-4']):
+                    with Box(['w-full']):
+                        Text("Email", ['block', 'text-sm', 'font-medium', 'text-gray-700', 'mb-1'])
+                        self.email_input = Input(placeholder="user@example.com", base_classes=['w-full'])
+                        
+                    with Box(['w-full']):
+                        Text("Password", ['block', 'text-sm', 'font-medium', 'text-gray-700', 'mb-1'])
+                        self.password_input = Input(placeholder="••••••••", base_classes=['w-full'])
+                        self.password_input._props['type'] = 'password'
+                    
+                    with Flex(['w-full', 'justify-between', 'items-center']):
+                        self.remember_toggle = ToggleSwitch("Remember Me")
+                        Button("Forgot password?", variant='ghost', base_classes=['text-sm', 'text-blue-600', 'hover:text-blue-500', 'px-0'])
+                    
+                    self.submit_btn = Button("Sign In", variant='primary', base_classes=['w-full', 'mt-6', 'py-3'])
 
 class StatGrid(TailwindElement):
     def __init__(self, stats: list[dict], base_classes: list[str] = None):
@@ -122,7 +132,7 @@ class TopNav(TailwindElement):
             
             with Flex(['items-center', 'gap-4']):
                 Icon('notifications', base_classes=['text-gray-500', 'hover:text-gray-700', 'cursor-pointer'])
-                self.user_dropdown = DropdownMenu(trigger_text=user_name, items=["Profile", "Settings", "Log out"])
+                self.user_dropdown = DropdownMenu(label=user_name, items=["Profile", "Settings", "Log out"])
                 Avatar(initials=user_name[:2].upper())
 
 class DataFeed(TailwindElement):
