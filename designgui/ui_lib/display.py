@@ -1,5 +1,4 @@
 import html
-import uuid
 from typing import Optional, List, Dict
 from nicegui import ui
 from .base import TailwindElement

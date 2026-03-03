@@ -25,7 +25,6 @@ keywords = ["nicegui", "ui", "tailwind", "design", "ai", "llm", "prototype"]
 dependencies = [
     "nicegui>=1.4.0",
     "typer>=0.9.0",
-    "pydantic>=2.0.0",
     "watchdog>=3.0.0"
 ]
 
@@ -42,5 +41,6 @@ include = ["designgui", "designgui.*"]
 exclude = ["product*", "production_app*", "venv*"]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0.0", "pytest-asyncio", "mypy"]
+dev = ["pytest>=7.0.0", "pytest-asyncio", "mypy", "httpx>=0.24.0"]
+agents = ["pydantic>=2.0.0"]
 

@@ -67,6 +67,11 @@ class Sheet(TailwindElement):
         self.is_open = True
         self.classes(remove='translate-x-full')
         return self
+
+    def close(self):
+        self.is_open = False
+        self.classes('translate-x-full')
+        return self
         
     def __enter__(self):
         """Override standard NiceGUI context execution pointing nested children directly into content_area"""

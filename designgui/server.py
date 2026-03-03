@@ -6,9 +6,8 @@ import sys
 import inspect
 import traceback
 import json
-import time
 from pathlib import Path
-from nicegui import ui, app, Client
+from nicegui import ui
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 

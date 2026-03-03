@@ -1,5 +1,4 @@
 import html
-import uuid
 from .base import TailwindElement
 from nicegui import ui
 
