@@ -9,7 +9,7 @@ from pathlib import Path
 # Provide a global app description for the Typer help menu
 app = typer.Typer(
     help=(
-        "Nice Design OS CLI - The Python Design Operating System.\\n\\n"
+        "Nice Design OS CLI - The Python Design Operating System.\n\n"
         "This tool scaffolds a 100% custom Tailwind-driven UI prototyping workflow "
         "and injects intelligent IDE Agent rules so AI tools (Cursor, Windsurf, Copilot, etc.) "
         "can autonomously build your UI screens using the 'Prompt as Code' 5-Loop workflow."
@@ -240,8 +240,8 @@ You are building the layout in `.designgui/product/shell.py` using `Container, S
 Use ONLY components from `designgui.ui_lib`. Scaffold a base feature screen in `.designgui/product/views/_.py`.
 Available Primitives: (Container, Stack, Flex, Box, Text, Divider).
 Inputs: (Button, Input, ToggleSwitch, Slider, RadioGroup, Select, Checkbox, Textarea).
-Display: (Image, Icon, Avatar, DropdownMenu, Table, Tabs, Accordion, Card, Badge).
-Layout: (Sidebar, Header, Sheet, Modal).
+Display: (Image, Icon, Avatar, DropdownMenu, Table, Tabs, TabPanel, Accordion, Card, Badge, Modal).
+Layout: (Sidebar, Header, Sheet).
 Composites: (AuthForm, StatGrid, EmptyState, Stepper, TopNav, DataFeed).
 Feedback: (Toast, Skeleton, Spinner)."""
     screen_md = """# Design Screen Refinement (/design-screen)

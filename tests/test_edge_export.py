@@ -28,6 +28,7 @@ import pytest
 # Constants
 # ---------------------------------------------------------------------------
 EXPORT_PORT = 8082
+EXPORT_PORT_ALT = 8083  # second port for route test — avoids TCP TIME_WAIT flakiness
 CUSTOM_PORT = 9090
 CUSTOM_HOST = "0.0.0.0"
 RUNTIME_BOOT_TIMEOUT = 20  # seconds — NiceGUI first startup downloads frontend assets
@@ -218,12 +219,18 @@ class TestExportStaticValidation:
 # ---------------------------------------------------------------------------
 
 class TestExportRuntimeValidation:
-    """Boot the exported app and probe it — simulates a headless Raspberry Pi."""
+    """Boot the exported app and probe it — simulates a headless Raspberry Pi.
+    Each test uses its own port to avoid TCP TIME_WAIT flakiness."""
 
-    def test_exported_app_boots(self, export_project):
+    def test_exported_app_boots(self, tmp_path):
         """The exported app must boot and serve HTTP 200 on the configured port."""
         import httpx
-        _, prod_dir = export_project
+        port = EXPORT_PORT
+        _scaffold_project(tmp_path, STANDARD_VIEWS)
+        result = _run_export(tmp_path, port=port)
+        assert result.returncode == 0, f"Export failed: {result.stderr}"
+
+        prod_dir = tmp_path / "production_app"
         main_py = prod_dir / "main.py"
 
         proc = subprocess.Popen(
@@ -234,15 +241,15 @@ class TestExportRuntimeValidation:
         )
 
         try:
-            if not _wait_for_server(EXPORT_PORT):
+            if not _wait_for_server(port):
                 stdout = proc.stdout.read().decode(errors="replace") if proc.stdout else ""
                 stderr = proc.stderr.read().decode(errors="replace") if proc.stderr else ""
                 pytest.skip(
-                    f"Exported app failed to boot on port {EXPORT_PORT}.\n"
+                    f"Exported app failed to boot on port {port}.\n"
                     f"stdout: {stdout[:500]}\nstderr: {stderr[:500]}"
                 )
 
-            r = httpx.get(f"http://localhost:{EXPORT_PORT}/", timeout=5)
+            r = httpx.get(f"http://localhost:{port}/", timeout=5)
             assert r.status_code == 200, f"Root route returned {r.status_code}"
         finally:
             proc.terminate()
@@ -252,10 +259,15 @@ class TestExportRuntimeValidation:
                 proc.kill()
                 proc.wait(timeout=5)
 
-    def test_exported_app_serves_all_routes(self, export_project):
+    def test_exported_app_serves_all_routes(self, tmp_path):
         """All 3 routes (/, /home, /settings) must return HTTP 200."""
         import httpx
-        _, prod_dir = export_project
+        port = EXPORT_PORT_ALT  # different port from test_exported_app_boots
+        _scaffold_project(tmp_path, STANDARD_VIEWS)
+        result = _run_export(tmp_path, port=port)
+        assert result.returncode == 0, f"Export failed: {result.stderr}"
+
+        prod_dir = tmp_path / "production_app"
         main_py = prod_dir / "main.py"
 
         proc = subprocess.Popen(
@@ -266,11 +278,11 @@ class TestExportRuntimeValidation:
         )
 
         try:
-            if not _wait_for_server(EXPORT_PORT):
-                pytest.skip(f"Exported app failed to boot on port {EXPORT_PORT}")
+            if not _wait_for_server(port):
+                pytest.skip(f"Exported app failed to boot on port {port}")
 
             for route in ["/", "/home", "/settings"]:
-                r = httpx.get(f"http://localhost:{EXPORT_PORT}{route}", timeout=5)
+                r = httpx.get(f"http://localhost:{port}{route}", timeout=5)
                 assert r.status_code == 200, f"Route {route} returned {r.status_code}"
         finally:
             proc.terminate()

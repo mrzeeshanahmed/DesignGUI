@@ -44,3 +44,5 @@ exclude = ["product*", "production_app*", "venv*"]
 dev = ["pytest>=7.0.0", "pytest-asyncio", "mypy", "httpx>=0.24.0"]
 agents = ["pydantic>=2.0.0"]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
