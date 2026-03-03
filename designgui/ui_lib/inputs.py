@@ -93,37 +93,28 @@ class ToggleSwitch(TailwindElement):
         self.value = value
         self._on_change_callback = on_change
         
-        # HTML DOM construction using relative grouping
-        # The actual input is hidden, the div is styled based on peer-checked
         self._input_id = f"toggle-{id(self)}"
         
-        def render_dom():
-            checked_attr = 'checked' if self.value else ''
-            safe_label = html.escape(label)
+        from nicegui import ui
+        with self:
+            with ui.element('div').classes('relative'):
+                self._input = ui.element('input').classes('sr-only peer').props(f'type="checkbox" id="{self._input_id}"')
+                if self.value:
+                    self._input.props('checked')
+                ui.element('div').classes('w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[\'\'] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600')
+            ui.element('span').classes('ml-3 text-sm font-medium text-gray-900').set_text(label)
             
-            dom = f"""
-            <div class="relative">
-                <input type="checkbox" id="{self._input_id}" class="sr-only peer" {checked_attr}>
-                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </div>
-            <span class="ml-3 text-sm font-medium text-gray-900">{safe_label}</span>
-            """
-            self._props['innerHTML'] = dom
-            
-        self.render_dom = render_dom # Make render_dom an instance method
-        self.render_dom()
-        
-        # We need to bind to the change event of the native checkbox inside the label
-        # NiceGUI captures events bubbling up to the wrapper label element natively
         def handle_change(e: Any):
-            # Read the raw DOM checked state primarily, falling back to python inversion securely
             if e.args and isinstance(e.args, dict) and 'target.checked' in e.args:
                 self.value = bool(e.args.get('target.checked'))
             else:
                 self.value = not self.value
                 
-            self.render_dom()
-            self.update()
+            if self.value:
+                self._input.props('checked')
+            else:
+                self._input.props(remove='checked')
+                
             if self._on_change_callback:
                 self._on_change_callback(self.value)
                 
@@ -149,7 +140,11 @@ class Slider(TailwindElement):
         self._on_change_callback = on_change
         
         def handle_input(e: Any):
-            val = float(e.args.get('target.value', self.value)) if isinstance(e.args, dict) else float(e.args)
+            try:
+                val = float(e.args.get('target.value', self.value)) if isinstance(e.args, dict) else float(e.args)
+            except (ValueError, TypeError):
+                val = self.value
+                
             self.value = val
             self._props['value'] = val
             if self._on_change_callback:
@@ -171,28 +166,28 @@ class RadioGroup(TailwindElement):
         self.options = options
         self._name = name if name else f"radio-group-{id(self)}"
         self._on_change_callback = on_change
+        self._radio_elements = {}
         
-        def render_dom():
-            dom = ""
+        from nicegui import ui
+        with self:
             for opt in self.options:
                 safe_opt = html.escape(opt)
-                checked = 'checked' if opt == self.value else ''
-                dom += f"""
-                <div class="flex items-center">
-                    <input type="radio" value="{safe_opt}" name="{self._name}" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500" {checked}>
-                    <label class="ml-2 text-sm font-medium text-gray-900">{safe_opt}</label>
-                </div>
-                """
-            self._props['innerHTML'] = dom
-            
-        render_dom()
-        
+                with ui.element('label').classes('flex items-center cursor-pointer'):
+                    radio = ui.element('input').classes('w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500').props(f'type="radio" value="{safe_opt}" name="{self._name}"')
+                    if opt == self.value:
+                        radio.props('checked')
+                    self._radio_elements[opt] = radio
+                    ui.element('span').classes('ml-2 text-sm font-medium text-gray-900').set_text(opt)
+                    
         def handle_change(e: Any):
-            # Target value bubbling from radio click
             val = e.args.get('target.value', self.value) if isinstance(e.args, dict) else self.value
             self.value = val
-            render_dom()
-            self.update()
+            for opt, radio in self._radio_elements.items():
+                if opt == val:
+                    radio.props('checked')
+                else:
+                    radio.props(remove='checked')
+                    
             if self._on_change_callback:
                 self._on_change_callback(val)
                 
@@ -211,22 +206,27 @@ class Select(TailwindElement):
         self.value = value if value else (options[0] if options else None)
         self.options = options
         self._on_change_callback = on_change
+        self._option_elements = {}
         
-        def render_dom():
-            dom = ""
+        from nicegui import ui
+        with self:
             for opt in self.options:
                 safe_opt = html.escape(opt)
-                selected = 'selected' if opt == self.value else ''
-                dom += f'<option value="{safe_opt}" {selected}>{safe_opt}</option>'
-            self._props['innerHTML'] = dom
-            
-        render_dom()
-        
+                option_el = ui.element('option').props(f'value="{safe_opt}"').set_text(opt)
+                if opt == self.value:
+                    option_el.props('selected')
+                self._option_elements[opt] = option_el
+                
         def handle_change(e: Any):
             val = e.args.get('target.value', self.value) if isinstance(e.args, dict) else self.value
             self.value = val
-            render_dom()
-            self.update()
+            
+            for opt, el in self._option_elements.items():
+                if opt == val:
+                    el.props('selected')
+                else:
+                    el.props(remove='selected')
+            
             if self._on_change_callback:
                 self._on_change_callback(val)
                 
@@ -237,33 +237,32 @@ class Checkbox(TailwindElement):
         """
         Tailwind Wrapper for a native HTML <input type="checkbox">.
         """
-        classes = ['flex', 'items-center']
+        classes = ['flex', 'items-center', 'cursor-pointer']
         if base_classes:
             classes.extend(base_classes)
-        super().__init__('div', classes)
+        super().__init__('label', classes)
         
         self.value = value
         self._on_change_callback = on_change
         
-        def render_dom():
-            checked_attr = 'checked' if self.value else ''
-            safe_label = html.escape(label)
-            dom = f"""
-            <input type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" {checked_attr}>
-            <label class="ml-2 block text-sm text-gray-900">{safe_label}</label>
-            """
-            self._props['innerHTML'] = dom
+        from nicegui import ui
+        with self:
+            self._input = ui.element('input').classes('h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded').props('type="checkbox"')
+            if self.value:
+                self._input.props('checked')
+            ui.element('span').classes('ml-2 block text-sm text-gray-900').set_text(label)
             
-        render_dom()
-        
         def handle_change(e: Any):
             if e.args and isinstance(e.args, dict) and 'target.checked' in e.args:
                 self.value = bool(e.args.get('target.checked'))
             else:
                 self.value = not self.value
                 
-            render_dom()
-            self.update()
+            if self.value:
+                self._input.props('checked')
+            else:
+                self._input.props(remove='checked')
+                
             if self._on_change_callback:
                 self._on_change_callback(self.value)
                 

@@ -23,7 +23,7 @@ classifiers = [
 ]
 keywords = ["nicegui", "ui", "tailwind", "design", "ai", "llm", "prototype"]
 dependencies = [
-    "nicegui>=1.4.0",
+    "nicegui>=1.4.0,<3.0.0",
     "typer>=0.9.0",
     "watchdog>=3.0.0"
 ]

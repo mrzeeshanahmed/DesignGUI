@@ -32,24 +32,7 @@ class Sheet(TailwindElement):
         super().__init__('div', classes)
         
         self.is_open = False
-        self._title = html.escape(title)
-        
-        header_dom = f"""
-        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h2 class="text-lg font-medium text-gray-900">{self._title}</h2>
-            <button class="text-gray-400 hover:text-gray-500 focus:outline-none" onclick="this.parentElement.parentElement.classList.add('translate-x-full')">
-                <span class="sr-only">Close panel</span>
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
-        """
-        
-        # In strictly composable NiceGUI, the child elements injected over DOM innerHTML require specific targeting
-        # Since NiceGUI adds children to the root tag, rendering inline static HTML headers directly works 
-        # only if content goes into a slot OR if we let users inject into the container natively
-        # To keep it simple, we don't mix innerHTML with nicegui children directly, we append children normally.
+        self._title = title
         
         from .primitives import Box, Flex, Text
         from .inputs import Button

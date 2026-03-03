@@ -11,6 +11,55 @@ from nicegui import ui
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+import time
+import secrets as _secrets
+from nicegui import app
+
+# Global singleton to prevent thread explosion per page load
+_observer_instance = None
+
+def get_or_create_observer(views_dir_path):
+    global _observer_instance
+    if _observer_instance is None and Path(views_dir_path).exists():
+        
+        class GlobalHotReloadHandler(FileSystemEventHandler):
+            def on_modified(self, event):
+                if event.is_directory or not event.src_path.endswith('.py'):
+                    return
+                # Tell all connected clients via app storage that a refresh occurred
+                app.storage.general['last_modified'] = time.time()
+                
+            def on_created(self, event):
+                self.on_modified(event)
+
+            def on_deleted(self, event):
+                self.on_modified(event)
+
+        _observer_instance = Observer()
+        # Schedule the singleton handler
+        _observer_instance.schedule(GlobalHotReloadHandler(), views_dir_path, recursive=False)
+        _observer_instance.start()
+        
+    return _observer_instance
+
+
+def _get_storage_secret() -> str:
+    """Return a persistent storage secret from config.json, generating one if absent."""
+    config_path = Path(".designgui/config.json")
+    try:
+        config = json.loads(config_path.read_text())
+        if "storage_secret" in config:
+            return config["storage_secret"]
+        # Generate, persist, and return a new random secret
+        new_secret = _secrets.token_hex(32)
+        config["storage_secret"] = new_secret
+        config_path.write_text(json.dumps(config, indent=2))
+        return new_secret
+    except Exception:
+        # Fallback: ephemeral secret if config is unreadable (non-persistent)
+        return _secrets.token_hex(32)
+
+
 def preview_environment(views_path: str = ".designgui/product/views"):
     try:
         config = json.loads(Path(".designgui/config.json").read_text())
@@ -117,40 +166,33 @@ def preview_environment(views_path: str = ".designgui/product/views"):
         # Initial population
         update_file_list()
         
-        # --- WATCHDOG AUTO-RELOAD SUBSYSTEM ---
-        class HotReloadHandler(FileSystemEventHandler):
-            def on_modified(self, event):
-                if event.is_directory or not event.src_path.endswith('.py'):
-                    return
-                # Defer to nicegui's main event loop explicitly 
-                def handle_reload():
-                    update_file_list()
-                    if view_select.value:
-                        render_generated_view(view_select.value)
-                        
-                ui.timer(0.1, handle_reload, once=True)
-                
-            def on_created(self, event):
-                if event.is_directory or not event.src_path.endswith('.py'):
-                    return
-                ui.timer(0.1, update_file_list, once=True)
-
-            def on_deleted(self, event):
-                if event.is_directory or not event.src_path.endswith('.py'):
-                    return
-                ui.timer(0.1, update_file_list, once=True)
-
-        views_dir_path = str(Path.cwd() / Path(views_path))
-        if Path(views_dir_path).exists():
-            observer = Observer()
-            observer.schedule(HotReloadHandler(), views_dir_path, recursive=False)
-            observer.start()
-            # Cleanly teardown when page unloads
-            ui.on('disconnect', observer.stop)
+        # Track the last known modification timestamp locally per-client connection
+        # Initialize storage if it doesn't exist
+        if 'last_modified' not in app.storage.general:
+            app.storage.general['last_modified'] = 0.0
+            
+        client_last_seen = app.storage.general['last_modified']
+        
+        def check_for_updates():
+            nonlocal client_last_seen
+            current_mod = app.storage.general.get('last_modified', 0.0)
+            if current_mod > client_last_seen:
+                client_last_seen = current_mod
+                update_file_list()
+                if view_select.value:
+                    render_generated_view(view_select.value)
+                    
+        # Check every 500ms for updates within the correct client context boundary
+        ui.timer(0.5, check_for_updates)
 
 def run_server(port: int = 8080, views_path: str = ".designgui/product/views"):
+    
+    # Initialize Watchdog Singleton Thread once ahead of clients
+    views_dir_path = str(Path.cwd() / Path(views_path))
+    get_or_create_observer(views_dir_path)
+    
     @ui.page('/')
     def index():
         preview_environment(views_path=views_path)
         
-    ui.run(title='Nice Design OS - Live Preview', port=port, reload=False)
+    ui.run(title='Nice Design OS - Live Preview', port=port, reload=False, storage_secret=_get_storage_secret())

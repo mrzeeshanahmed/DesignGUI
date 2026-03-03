@@ -61,11 +61,13 @@ class DropdownMenu(TailwindElement):
     def render_dom(self):
         # The trigger button (always visible)
         with self:
-            TailwindElement('button').classes(
+            trigger_btn = TailwindElement('button').classes(
                 'inline-flex justify-center w-full rounded-md border border-gray-300 '
                 'shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 '
                 'hover:bg-gray-50 focus:outline-none'
-            ).props('type="button"').props(f'innerHTML="{html.escape(self.label)}"').on('click', lambda: self._toggle_menu())
+            ).props('type="button"')
+            trigger_btn._props['innerHTML'] = html.escape(self.label)
+            trigger_btn.on('click', lambda: self._toggle_menu())
             
             # The dropdown content (hidden by default, shown on group hover/click)
             self._menu_container = TailwindElement('div').classes(
@@ -84,12 +86,16 @@ class DropdownMenu(TailwindElement):
                             'block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer'
                         )
                         # We use innerHTML prop securely just for the text payload
-                        a_tag.props(f'innerHTML="{html.escape(item)}"').on('click', create_handler(item))
+                        a_tag._props['innerHTML'] = html.escape(item)
+                        a_tag.on('click', create_handler(item))
 
     def _toggle_menu(self):
-        # Optional: Manual toggle hook if group-hover isn't enough for mobile
-        # Simplified for CSS-driven group-hover default behavior
-        pass
+        # Toggle menu visibility for both hover (desktop) and click (touch/mobile)
+        self._menu_visible = not getattr(self, '_menu_visible', False)
+        if self._menu_visible:
+            self._menu_container.classes(remove='hidden')
+        else:
+            self._menu_container.classes('hidden')
 
     def _handle_select(self, item: str):
         if self.on_select:
@@ -167,7 +173,9 @@ class Tabs(TailwindElement):
                         
                     btn = TailwindElement('button').classes(
                         'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm focus:outline-none transition-colors duration-200'
-                    ).props('type="button"').props(f'innerHTML="{html.escape(tab)}"').on('click', create_handler(tab))
+                    ).props('type="button"')
+                    btn._props['innerHTML'] = html.escape(tab)
+                    btn.on('click', create_handler(tab))
                     
                     self.tab_buttons[tab] = btn
                     

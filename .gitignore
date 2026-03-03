@@ -168,3 +168,6 @@ screenshot2.png
 product/
 .nice-design/
 
+# DesignGUI local blueprint (never push to git)
+Goal.md
+
