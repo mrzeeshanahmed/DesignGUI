@@ -201,7 +201,7 @@ You are operating in a Nice Design OS project. You must strictly follow these ru
 To build the interface:
 1. Wrap the entire view in a `Container` from `designgui.ui_lib.primitives`.
 2. Do not use standard NiceGUI `.classes()` chained directly onto NiceGUI elements unless strictly necessary. Instead, use the `base_classes` array constructor argument.
-3. ONLY use components from `designgui.ui_lib`. Available Primitives: (Container, Stack, Flex, Box, Text, Divider). Inputs: (Button, Input, ToggleSwitch, Slider, RadioGroup, Select, Checkbox, Textarea). Display: (Image, Icon, Avatar, DropdownMenu, Table, Tabs, Accordion, Card, Badge, Modal). Layout: (Sidebar, Header, Sheet). Composites: (AuthForm, StatGrid, EmptyState, Stepper, TopNav, DataFeed). Feedback: (Toast, Skeleton, Spinner).
+3. ONLY use components from `designgui.ui_lib`. Available Primitives: (Container, Stack, Flex, Box, Text, Divider). Inputs: (Button, Input, ToggleSwitch, Slider, RadioGroup, Select, Checkbox, Textarea). Display: (Image, Icon, Avatar, DropdownMenu, Table, Tabs, TabPanel, Accordion, Card, Badge, Modal). Layout: (Sidebar, Header, Sheet). Composites: (AuthForm, StatGrid, EmptyState, Stepper, TopNav, DataFeed). Feedback: (Toast, Skeleton, Spinner).
 4. Use Tailwind CSS exclusively. Do not write custom CSS unless explicitly requested.
 
 When building state logic:

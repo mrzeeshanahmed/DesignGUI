@@ -100,7 +100,8 @@ class DropdownMenu(TailwindElement):
     def _handle_select(self, item: str):
         if self.on_select:
             self.on_select(item)
-        # Optional check: we could force hide the menu here by manipulating classes
+        self._menu_visible = False
+        self._menu_container.classes('hidden')
 
 class Table(TailwindElement):
     def __init__(self, columns: List[str], rows: List[Dict[str, str]], base_classes: list[str] = None):

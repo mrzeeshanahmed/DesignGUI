@@ -168,6 +168,8 @@ screenshot2.png
 product/
 .nice-design/
 
-# DesignGUI local blueprint (never push to git)
+# DesignGUI local planning/build artifacts (never push to git)
 Goal.md
+implementation_plan.md
+out.txt
 
