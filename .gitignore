@@ -172,4 +172,5 @@ product/
 Goal.md
 implementation_plan.md
 out.txt
+pytest_results.txt
 
