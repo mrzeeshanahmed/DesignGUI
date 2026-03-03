@@ -61,31 +61,30 @@ class DropdownMenu(TailwindElement):
     def render_dom(self):
         # The trigger button (always visible)
         with self:
-            ui.element('button').classes(
+            TailwindElement('button').classes(
                 'inline-flex justify-center w-full rounded-md border border-gray-300 '
                 'shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 '
                 'hover:bg-gray-50 focus:outline-none'
             ).props('type="button"').props(f'innerHTML="{html.escape(self.label)}"').on('click', lambda: self._toggle_menu())
             
             # The dropdown content (hidden by default, shown on group hover/click)
-            self._menu_container = ui.element('div').classes(
+            self._menu_container = TailwindElement('div').classes(
                 'hidden group-hover:block absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50'
             )
             
             with self._menu_container:
                 # Loop through items and create clickable native `a` tags
-                menu_list = ui.element('div').classes('py-1').props('role="menu"')
+                menu_list = TailwindElement('div').classes('py-1').props('role="menu"')
                 with menu_list:
                     for item in self.items:
                         def create_handler(i):
                             return lambda _: self._handle_select(i)
                         
-                        a_tag = ui.element('a').classes(
+                        a_tag = TailwindElement('a').classes(
                             'block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer'
                         )
                         # We use innerHTML prop securely just for the text payload
-                        a_tag.props(f'innerHTML="{html.escape(item)}"')
-                        a_tag.on('click', create_handler(item))
+                        a_tag.props(f'innerHTML="{html.escape(item)}"').on('click', create_handler(item))
 
     def _toggle_menu(self):
         # Optional: Manual toggle hook if group-hover isn't enough for mobile
@@ -160,13 +159,13 @@ class Tabs(TailwindElement):
             
     def render_dom(self):
         with self:
-            nav_container = ui.element('nav').classes('flex space-x-4 border-b border-gray-200 w-full mb-4')
+            nav_container = TailwindElement('nav').classes('flex space-x-4 border-b border-gray-200 w-full mb-4')
             with nav_container:
                 for tab in self.tabs:
                     def create_handler(t):
                         return lambda _: self.set_tab(t)
                         
-                    btn = ui.element('button').classes(
+                    btn = TailwindElement('button').classes(
                         'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm focus:outline-none transition-colors duration-200'
                     ).props('type="button"').props(f'innerHTML="{html.escape(tab)}"').on('click', create_handler(tab))
                     

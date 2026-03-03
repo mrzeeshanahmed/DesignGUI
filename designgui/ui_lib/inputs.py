@@ -158,7 +158,7 @@ class Slider(TailwindElement):
         self.on('input', handle_input, args=['target.value'])
 
 class RadioGroup(TailwindElement):
-    def __init__(self, options: List[str], value: str, name: str = "radio-group", on_change: Optional[Callable] = None, base_classes: list[str] = None):
+    def __init__(self, options: List[str], value: str, name: str = None, on_change: Optional[Callable] = None, base_classes: list[str] = None):
         """
         Tailwind Wrapper for a group of radio buttons.
         """
@@ -169,7 +169,7 @@ class RadioGroup(TailwindElement):
         
         self.value = value
         self.options = options
-        self._name = name
+        self._name = name if name else f"radio-group-{id(self)}"
         self._on_change_callback = on_change
         
         def render_dom():

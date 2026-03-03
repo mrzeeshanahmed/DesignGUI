@@ -135,6 +135,11 @@ def preview_environment(views_path: str = ".designgui/product/views"):
                     return
                 ui.timer(0.1, update_file_list, once=True)
 
+            def on_deleted(self, event):
+                if event.is_directory or not event.src_path.endswith('.py'):
+                    return
+                ui.timer(0.1, update_file_list, once=True)
+
         views_dir_path = str(Path.cwd() / Path(views_path))
         if Path(views_dir_path).exists():
             observer = Observer()

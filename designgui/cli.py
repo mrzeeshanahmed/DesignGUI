@@ -92,7 +92,8 @@ def get_locale_strings():
         "cli_remove_start": "Removing DesignGUI from the project...",
         "cli_remove_success": "DesignGUI has been safely removed from this project.",
         "cli_security_engine_warning": "⚠️  WARNING: DESIGNGUI EXECUTES PYTHON PAYLOADS DYNAMICALLY ⚠️\nThe Live Preview engine will automatically execute code dropped into the `.designgui/product/views/` directory. Do not place untrusted third-party scripts here.\n",
-        "cli_security_daemon_warning": "⚠️  WARNING: DESIGNGUI EXECUTES PYTHON PAYLOADS DYNAMICALLY ⚠️\nThe Daemon engine will automatically execute code dropped into the `.designgui/product/views/` directory. Do not place untrusted third-party scripts here.\n"
+        "cli_security_daemon_warning": "⚠️  WARNING: DESIGNGUI EXECUTES PYTHON PAYLOADS DYNAMICALLY ⚠️\nThe Daemon engine will automatically execute code dropped into the `.designgui/product/views/` directory. Do not place untrusted third-party scripts here.\n",
+        "cli_daemon_success": "Daemon launched successfully in the background."
     }
 
 def smart_gitignore_append(cwd: Path):
@@ -296,7 +297,15 @@ def export(host: str = typer.Option("0.0.0.0", help="Host address for production
     imports = []
     routes = []
     
-    py_files = [f.stem for f in views_dir.glob("*.py") if f.name != "__init__.py"]
+    py_files = []
+    for f in views_dir.glob("*.py"):
+        if f.name == "__init__.py":
+            continue
+        if not f.stem.isidentifier():
+            typer.echo(typer.style(f"Warning: Skipping {f.name} because it is not a valid Python identifier.", fg=typer.colors.YELLOW))
+            continue
+        py_files.append(f.stem)
+        
     for view_name in py_files:
         imports.append(f"from product.views.{view_name} import render_view as render_{view_name}")
         route_path = '/' if view_name == 'dashboard' or len(py_files) == 1 and view_name == py_files[0] else f'/{view_name}'
@@ -372,7 +381,7 @@ def daemon_command(port: int = typer.Option(None, help="Port to run the daemon o
         # Unix/Linux background daemon
         subprocess.Popen(cmd, start_new_session=True)
         
-    typer.echo(typer.style("Daemon launched successfully in the background.", fg=typer.colors.GREEN))
+    typer.echo(typer.style(strings.get("cli_daemon_success", "Daemon launched successfully in the background."), fg=typer.colors.GREEN))
 
 @app.command("remove")
 def remove() -> None:
