@@ -1,4 +1,4 @@
-[DesignGUI logo](assets/Logo.png)
+![DesignGUI logo](assets/Logo.png)
 
 # DesignGUI — The Autonomous AI-Native UI Framework
 
