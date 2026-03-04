@@ -1,3 +1,5 @@
+![DesignGUI logo](assets/logo.png)
+
 # DesignGUI — The Autonomous AI-Native UI Framework
 
 [![PyPI version](https://badge.fury.io/py/designgui.svg)](https://badge.fury.io/py/designgui)
