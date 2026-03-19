@@ -6,6 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-mrzeeshanahmed-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/mrzeeshanahmed)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/designgui?period=total&units=NONE&left_color=BLUE&right_color=BRIGHTGREEN&left_text=downloads)](https://pepy.tech/projects/designgui)
 
 **DesignGUI** is a headless, strictly-typed Python UI framework explicitly engineered for **Autonomous AI Agents** and **LLM-assisted development**.
 
